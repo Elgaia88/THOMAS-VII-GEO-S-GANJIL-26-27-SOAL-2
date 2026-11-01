@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ujian Sosiologi - Paket 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .option-btn { transition: background-color 0.2s, transform 0.1s; }
+        .option-btn:active { transform: scale(0.98); }
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.9; }
+    </style>
+</head>
+<body class="bg-emerald-50 min-h-screen text-gray-800 font-sans p-4 flex items-center justify-center">
+
+    <div id="app" class="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="p-8">
+            <h1 class="text-3xl font-extrabold text-center text-emerald-700 mb-6">Ujian Sosiologi - Paket 2</h1>
+            
+            <div class="mb-5">
+                <label class="block mb-2 font-bold text-gray-700">Nama Pemain:</label>
+                <input type="text" id="player-name" class="w-full border-2 border-emerald-200 p-3 rounded-lg focus:outline-none focus:border-emerald-500" placeholder="Masukkan nama Anda di sini..." required>
+            </div>
+            
+            <div class="mb-8">
+                <label class="block mb-2 font-bold text-gray-700">Pilih Durasi per Soal:</label>
+                <select id="duration" class="w-full border-2 border-emerald-200 p-3 rounded-lg focus:outline-none focus:border-emerald-500">
+                    <option value="15">15 Detik</option>
+                    <option value="30">30 Detik</option>
+                </select>
+            </div>
+            
+            <button onclick="startQuiz()" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-lg hover:bg-emerald-700 transition shadow-lg text-lg">Mulai Kuis Sekarang</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden p-8">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-gray-100">
+                <span id="question-tracker" class="font-bold text-emerald-600 bg-emerald-100 py-1 px-3 rounded-full">Soal: 1/25</span>
+                <div class="flex items-center gap-2">
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-extrabold text-red-600 text-xl"><span id="timer">15</span>s</span>
+                </div>
+            </div>
+            
+            <h2 id="question-text" class="text-xl md:text-2xl font-semibold mb-6 text-gray-800 leading-snug"></h2>
+            
+            <div id="options-container" class="flex flex-col gap-3">
+                <!-- Options injected by JS -->
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold text-emerald-700 mb-2">Hasil Kuis: Ujian Sosiologi Paket 2</h1>
+                <p id="result-player" class="text-xl text-gray-600 mb-4"></p>
+                <div class="inline-block bg-emerald-100 p-6 rounded-full border-4 border-emerald-200 shadow-inner">
+                    <span class="block text-sm text-emerald-600 font-bold uppercase tracking-wider mb-1">Skor Akhir</span>
+                    <span id="result-score" class="text-5xl font-black text-emerald-800"></span>
+                </div>
+            </div>
+            
+            <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Review Jawaban:</h3>
+            <div id="review-container" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                <!-- Review injected by JS -->
+            </div>
+            
+            <button onclick="location.reload()" class="mt-8 w-full bg-emerald-600 text-white font-bold py-4 rounded-lg hover:bg-emerald-700 transition shadow-lg">Main Lagi</button>
+        </div>
+    </div>
+
+    <script>
+        const rawQuestions = [
+            { q: "Berikut ini yang BUKAN merupakan agen sosialisasi adalah...", options: [{text: "Pasar tradisional", isCorrect: true}, {text: "Keluarga", isCorrect: false}, {text: "Media massa", isCorrect: false}, {text: "Sekolah", isCorrect: false}] },
+            { q: "Tahapan sosialisasi primer terjadi pada lingkungan...", options: [{text: "Keluarga", isCorrect: true}, {text: "Sekolah", isCorrect: false}, {text: "Tempat kerja", isCorrect: false}, {text: "Masyarakat luas", isCorrect: false}] },
+            { q: "Komunikasi yang tidak memperbolehkan lawan bicara untuk menanggapi pesan (komunikasi latah) merupakan ciri pola sosialisasi...", options: [{text: "Represif", isCorrect: true}, {text: "Partisipatoris", isCorrect: false}, {text: "Sekunder", isCorrect: false}, {text: "Otoriter", isCorrect: false}] },
+            { q: "Pola sosialisasi partisipatoris ditandai dengan...", options: [{text: "Hukuman dan imbalan bersifat simbolis", isCorrect: true}, {text: "Menekan pada pemberian sanksi", isCorrect: false}, {text: "Komunikasi bersifat satu arah", isCorrect: false}, {text: "Tidak ada kebebasan bagi penerima pesan", isCorrect: false}] },
+            { q: "Makanan bergizi sangat berguna bagi kesehatan manusia. Hal ini berkaitan dengan nilai...", options: [{text: "Materiel", isCorrect: true}, {text: "Vital", isCorrect: false}, {text: "Kerohanian", isCorrect: false}, {text: "Sosial", isCorrect: false}] },
+            { q: "Nilai yang terkandung dalam segala sesuatu yang berguna bagi manusia untuk mengadakan kegiatan disebut...", options: [{text: "Nilai vital", isCorrect: true}, {text: "Nilai materiel", isCorrect: false}, {text: "Nilai kerohanian", isCorrect: false}, {text: "Nilai absolut", isCorrect: false}] },
+            { q: "Larangan mengambil milik orang lain merupakan contoh dari penerapan norma...", options: [{text: "Kesusilaan", isCorrect: true}, {text: "Agama", isCorrect: false}, {text: "Kesopanan", isCorrect: false}, {text: "Hukum", isCorrect: false}] },
+            { q: "Norma yang bersifat mutlak dan mengharuskan ketaatan pada pemeluknya disebut norma...", options: [{text: "Agama", isCorrect: true}, {text: "Kesusilaan", isCorrect: false}, {text: "Hukum", isCorrect: false}, {text: "Kesopanan", isCorrect: false}] },
+            { q: "Menurut George H. Mead, anak yang sudah mulai memahami dan menyadari aturan yang berlaku (6-17 tahun) berada pada tahap...", options: [{text: "Game stage", isCorrect: true}, {text: "Play stage", isCorrect: false}, {text: "Preparatory stage", isCorrect: false}, {text: "Generalized other", isCorrect: false}] },
+            { q: "Peran keluarga sangat penting pada tahap persiapan yang dialami anak usia 0-2 tahun. Tahap ini disebut...", options: [{text: "Preparatory stage", isCorrect: true}, {text: "Play stage", isCorrect: false}, {text: "Game stage", isCorrect: false}, {text: "Sensorimotor", isCorrect: false}] },
+            { q: "Tahap Praoperasional menurut Jean Piaget terjadi pada rentang usia...", options: [{text: "2 - 7 tahun", isCorrect: true}, {text: "0 - 2 tahun", isCorrect: false}, {text: "7 - 11 tahun", isCorrect: false}, {text: "11 - 15 tahun", isCorrect: false}] },
+            { q: "Remaja yang pemahamannya semakin meningkat sehingga bisa menganalisis masalah yang lebih rumit berada pada tahap (menurut Piaget)...", options: [{text: "Operasional formal", isCorrect: true}, {text: "Operasional konkret", isCorrect: false}, {text: "Praoperasional", isCorrect: false}, {text: "Sensorimotor", isCorrect: false}] },
+            { q: "Proses penyampaian pesan dari satu pihak kepada pihak lain sebagai syarat sosialisasi disebut...", options: [{text: "Komunikasi", isCorrect: true}, {text: "Kontak sosial", isCorrect: false}, {text: "Interaksi", isCorrect: false}, {text: "Akomodasi", isCorrect: false}] },
+            { q: "Pemberlakuan kurikulum merdeka sebagai kurikulum baru dalam masyarakat pendidikan adalah contoh kerjasama bentuk...", options: [{text: "Kooptasi", isCorrect: true}, {text: "Koalisi", isCorrect: false}, {text: "Bargaining", isCorrect: false}, {text: "Joint venture", isCorrect: false}] },
+            { q: "Bergabungnya beberapa perusahaan untuk membuat suatu proyek atau hasil yang baru (misal: Nestle dan Indofood) disebut...", options: [{text: "Joint venture", isCorrect: true}, {text: "Kooptasi", isCorrect: false}, {text: "Koalisi", isCorrect: false}, {text: "Tawar-menawar", isCorrect: false}] },
+            { q: "Akomodasi yang terjadi karena setiap orang saling menghormati, seperti hubungan antarsuku di Indonesia, disebut...", options: [{text: "Toleransi", isCorrect: true}, {text: "Konsiliasi", isCorrect: false}, {text: "Kompromi", isCorrect: false}, {text: "Mediasi", isCorrect: false}] },
+            { q: "Akomodasi dimana pihak ketiga bertindak sebagai pengambil keputusan (bukan sekadar penasehat) disebut...", options: [{text: "Arbitrasi", isCorrect: true}, {text: "Mediasi", isCorrect: false}, {text: "Koersi", isCorrect: false}, {text: "Konsiliasi", isCorrect: false}] },
+            { q: "Upaya mempertemukan keinginan pihak-pihak yang berselisih untuk tercapainya suatu persetujuan bersama (seperti koalisi partai) disebut...", options: [{text: "Konsiliasi", isCorrect: true}, {text: "Kompromi", isCorrect: false}, {text: "Arbitrasi", isCorrect: false}, {text: "Mediasi", isCorrect: false}] },
+            { q: "Pihak-pihak yang berselisih saling meredakan tuntutan sehingga tercapai penyelesaian bersama (misal: ganti rugi tabrakan) merupakan bentuk...", options: [{text: "Kompromi", isCorrect: true}, {text: "Stalemate", isCorrect: false}, {text: "Toleransi", isCorrect: false}, {text: "Koersi", isCorrect: false}] },
+            { q: "Media massa merupakan salah satu dari...", options: [{text: "Agen sosialisasi", isCorrect: true}, {text: "Bentuk akomodasi", isCorrect: false}, {text: "Tahapan sosialisasi", isCorrect: false}, {text: "Syarat sosialisasi", isCorrect: false}] },
+            { q: "Nilai yang berguna bagi batin manusia disebut dengan nilai...", options: [{text: "Kerohanian", isCorrect: true}, {text: "Materiel", isCorrect: false}, {text: "Vital", isCorrect: false}, {text: "Estetika", isCorrect: false}] },
+            { q: "Memberi dengan tangan kanan merupakan contoh dari norma...", options: [{text: "Kesopanan", isCorrect: true}, {text: "Hukum", isCorrect: false}, {text: "Agama", isCorrect: false}, {text: "Kesusilaan", isCorrect: false}] },
+            { q: "Di tahap Generalized (18 tahun ke atas), individu mulai memahami...", options: [{text: "Kerjasama, toleransi, dan berkesadaran", isCorrect: true}, {text: "Bagaimana meniru wajah orang tua", isCorrect: false}, {text: "Logika matematika dasar", isCorrect: false}, {text: "Eksplorasi lingkungan berdasarkan sentuhan", isCorrect: false}] },
+            { q: "Bayi akan berkomunikasi dengan lingkungan melalui manipulasi dan sentuhan fisik pada tahap...", options: [{text: "Sensorimotor", isCorrect: true}, {text: "Praoperasional", isCorrect: false}, {text: "Operasional konkret", isCorrect: false}, {text: "Operasional formal", isCorrect: false}] },
+            { q: "Seorang anak diberi imbalan karena berbuat baik. Ini merupakan contoh sosialisasi yang berpola...", options: [{text: "Partisipatoris", isCorrect: true}, {text: "Represif", isCorrect: false}, {text: "Otoriter", isCorrect: false}, {text: "Koersi", isCorrect: false}] }
+        ];
+
+        let questions = [];
+        let playerName = "";
+        let duration = 15;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timeLeft = 0;
+        let timerInterval;
+        let isAnswered = false;
+        let userAnswers = [];
+
+        function shuffleArray(array) {
+            return array.map(a => ({sort: Math.random(), value: a}))
+                        .sort((a, b) => a.sort - b.sort)
+                        .map(a => a.value);
+        }
+
+        function startQuiz() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if(!nameInput) { alert("Silakan masukkan nama Anda!"); return; }
+            
+            playerName = nameInput;
+            duration = parseInt(document.getElementById('duration').value);
+            
+            // Setup questions
+            let shuffled = shuffleArray([...rawQuestions]);
+            questions = shuffled.map(q => {
+                return { ...q, options: shuffleArray([...q.options]) };
+            });
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnswered = false;
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-tracker').innerText = `Soal: ${currentQuestionIndex + 1}/${questions.length}`;
+            document.getElementById('question-text').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full text-left bg-gray-100 hover:bg-emerald-100 text-gray-800 font-semibold py-4 px-6 rounded-xl border-2 border-transparent focus:outline-none';
+                btn.innerText = opt.text;
+                btn.dataset.isCorrect = opt.isCorrect;
+                btn.dataset.text = opt.text;
+                btn.onclick = () => handleAnswer(btn, opt);
+                optionsContainer.appendChild(btn);
+            });
+
+            timeLeft = duration;
+            document.getElementById('timer').innerText = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleAnswer(selectedButton, option) {
+            if(isAnswered) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const q = questions[currentQuestionIndex];
+            const correctText = q.options.find(o => o.isCorrect).text;
+
+            userAnswers.push({
+                question: q.q,
+                userAnswer: option.text,
+                correctAnswer: correctText,
+                isCorrect: option.isCorrect
+            });
+
+            const allButtons = document.querySelectorAll('.option-btn');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                if(btn.dataset.isCorrect === 'true') {
+                    btn.classList.remove('bg-gray-100', 'text-gray-800', 'hover:bg-emerald-100');
+                    btn.classList.add('bg-green-500', 'text-white', 'border-green-600');
+                }
+            });
+
+            if (option.isCorrect) {
+                score++;
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            } else {
+                selectedButton.classList.remove('bg-gray-100', 'text-gray-800', 'hover:bg-emerald-100');
+                selectedButton.classList.add('bg-red-500', 'text-white', 'border-red-600');
+            }
+
+            setTimeout(nextQuestion, 2000);
+        }
+
+        function handleTimeOut() {
+            if(isAnswered) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const q = questions[currentQuestionIndex];
+            const correctText = q.options.find(o => o.isCorrect).text;
+
+            userAnswers.push({
+                question: q.q,
+                userAnswer: "(Waktu Habis)",
+                correctAnswer: correctText,
+                isCorrect: false
+            });
+
+            const allButtons = document.querySelectorAll('.option-btn');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                if(btn.dataset.isCorrect === 'true') {
+                    btn.classList.remove('bg-gray-100', 'text-gray-800', 'hover:bg-emerald-100');
+                    btn.classList.add('bg-green-500', 'text-white', 'border-green-600');
+                }
+            });
+
+            setTimeout(nextQuestion, 2000);
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if(currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            
+            document.getElementById('result-player').innerText = `Pemain: ${playerName}`;
+            const finalScore = Math.round((score / questions.length) * 100);
+            document.getElementById('result-score').innerText = finalScore;
+            
+            if(finalScore >= 70) {
+                confetti({ particleCount: 300, spread: 100, origin: { y: 0.3 } });
+            }
+
+            const reviewContainer = document.getElementById('review-container');
+            userAnswers.forEach((ans, i) => {
+                const item = document.createElement('div');
+                item.className = 'p-4 rounded-lg bg-gray-50 border border-gray-200';
+                item.innerHTML = `
+                    <p class="font-semibold text-gray-800 mb-2">${i+1}. ${ans.question}</p>
+                    <p class="text-sm">Jawaban Anda: <span class="font-bold px-2 py-1 rounded text-white ${ans.isCorrect ? 'bg-green-500' : 'bg-red-500'}">${ans.userAnswer}</span></p>
+                    ${!ans.isCorrect ? `<p class="text-sm mt-1">Jawaban Benar: <span class="font-bold text-green-600">${ans.correctAnswer}</span></p>` : ''}
+                `;
+                reviewContainer.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
